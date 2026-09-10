@@ -54,21 +54,25 @@ export default function DashboardPage() {
               className="grid min-h-0 flex-1"
               style={{ gridTemplateColumns: "296px 1fr", gap: 22, padding: "0 24px 24px" }}
             >
-              <div className="scroll-quiet flex min-h-0 flex-col overflow-y-auto" style={{ gap: 12 }}>
-                <FocusPanel scale="mac" showFootnote online={online} onSelectTask={setSelected} />
-                <HabitsWidget scale="mac" online={online} />
-                <div style={{ marginTop: "auto" }}>
+              <div className="flex min-h-0 flex-col" style={{ gap: 12 }}>
+                {/* Focus and habits scroll; the tiles stay pinned to the bottom
+                    of the rail so they never fall below the fold at 1440x900. */}
+                <div className="scroll-quiet flex min-h-0 flex-1 flex-col" style={{ gap: 12, overflowY: "auto" }}>
+                  <FocusPanel scale="mac" showFootnote online={online} onSelectTask={setSelected} />
+                  <HabitsWidget scale="mac" online={online} />
+                </div>
+                <div className="shrink-0">
                   <StatTiles
                     scale="mac"
                     stats={[
-                      { label: "Due this week", value: stats.dueThisWeek },
+                      { label: "Due 7d", value: stats.dueThisWeek },
                       {
                         label: "Overdue",
                         value: stats.overdue,
                         tone: stats.overdue > 0 ? "var(--status-overdue)" : undefined,
                       },
                       {
-                        label: "Done today",
+                        label: "Done",
                         value: stats.completedToday,
                         tone: "var(--status-done)",
                       },
@@ -144,13 +148,13 @@ export default function DashboardPage() {
 
             <StatTiles
               stats={[
-                { label: "Due this week", value: stats.dueThisWeek },
+                { label: "Due 7d", value: stats.dueThisWeek },
                 {
                   label: "Overdue",
                   value: stats.overdue,
                   tone: stats.overdue > 0 ? "var(--status-overdue)" : undefined,
                 },
-                { label: "Done today", value: stats.completedToday, tone: "var(--status-done)" },
+                { label: "Done", value: stats.completedToday, tone: "var(--status-done)" },
               ]}
             />
 

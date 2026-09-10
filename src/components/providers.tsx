@@ -2,6 +2,7 @@
 
 import {
   QueryClient,
+  QueryClientProvider,
   type QueryClientConfig,
 } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
@@ -76,8 +77,15 @@ export function Providers({
     [supabase, userId, profile],
   );
 
+  // On the server there is no IndexedDB, so persistence is skipped — but a
+  // QueryClientProvider must still wrap children or every useQuery below
+  // throws during SSR.
   if (!persister) {
-    return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
+    return (
+      <QueryClientProvider client={queryClient}>
+        <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
+      </QueryClientProvider>
+    );
   }
 
   return (

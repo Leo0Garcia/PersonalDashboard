@@ -30,7 +30,7 @@ export function StatTiles({
           </span>
           <span
             className="mono-meta font-medium"
-            style={{ fontSize: 9.5, letterSpacing: "0.06em", color: "var(--ink-3)" }}
+            style={{ fontSize: 9.5, letterSpacing: "0.05em", color: "var(--ink-3)", whiteSpace: "nowrap" }}
           >
             {s.label}
           </span>
