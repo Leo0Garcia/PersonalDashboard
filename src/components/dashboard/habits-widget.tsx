@@ -1,6 +1,7 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, Plus } from "lucide-react";
+import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@/components/providers";
 import { keys, useCompletions, useHabits } from "@/lib/hooks/use-data";
@@ -58,7 +59,50 @@ export function HabitsWidget({
     }
   }
 
-  if (list.length === 0) return null;
+  // Returning null here used to make habits invisible AND uncreatable: the only
+  // way to add one is Settings, so an empty widget left no route in at all.
+  if (list.length === 0) {
+    return (
+      <div
+        className="rounded-[10px]"
+        style={{
+          background: "var(--bg-panel)",
+          border: "1px solid var(--line-soft)",
+          padding: phone ? 15 : "14px 15px 15px",
+        }}
+      >
+        <span className="mono-label" style={{ fontSize: 11, color: "var(--ink-3)" }}>
+          Habits
+        </span>
+        <p
+          style={{
+            fontSize: 13,
+            lineHeight: 1.5,
+            color: "var(--ink-3)",
+            marginTop: 8,
+            marginBottom: 12,
+          }}
+        >
+          Nothing tracked yet. Four or five is plenty.
+        </p>
+        <Link
+          href="/settings"
+          className="mono-meta flex items-center justify-center font-semibold"
+          style={{
+            minHeight: 44,
+            gap: 7,
+            borderRadius: 10,
+            border: "1px dashed var(--line-dashed)",
+            color: "var(--accent)",
+            fontSize: 11,
+          }}
+        >
+          <Plus size={13} strokeWidth={2.5} />
+          Add a habit
+        </Link>
+      </div>
+    );
+  }
 
   const box = phone ? 26 : 20;
 
@@ -165,11 +209,9 @@ export function HabitsWidget({
         }}
       >
         <span>Last 7 days · Mon → today</span>
-        {onEdit && (
-          <button type="button" onClick={onEdit} className="mono-meta">
-            Edit in settings
-          </button>
-        )}
+        <Link href="/settings" className="mono-meta" onClick={onEdit}>
+          Edit in settings
+        </Link>
       </div>
     </div>
   );

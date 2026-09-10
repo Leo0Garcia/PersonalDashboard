@@ -1,11 +1,49 @@
 "use client";
 
-import { LayoutGrid, Settings, Target } from "lucide-react";
+import { LayoutGrid, Moon, Settings, Target } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTheme } from "@/lib/hooks/use-theme";
 import { hhmm, longDateLabel } from "@/lib/format";
+
+const MAC_NAV = [
+  { href: "/", label: "Dashboard", icon: Target },
+  { href: "/board", label: "Board", icon: LayoutGrid },
+  { href: "/review", label: "Review", icon: Moon },
+  { href: "/settings", label: "Settings", icon: Settings },
+];
+
+function MacNavLink({
+  href,
+  label,
+  icon: Icon,
+}: {
+  href: string;
+  label: string;
+  icon: typeof Target;
+}) {
+  const pathname = usePathname();
+  const active = pathname === href;
+
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className="mono-meta flex items-center rounded-[6px] font-semibold"
+      style={{
+        gap: 6,
+        padding: "6px 9px",
+        fontSize: 11,
+        color: active ? "var(--ink-1)" : "var(--ink-3)",
+        background: active ? "var(--chip-fill-strong)" : "transparent",
+      }}
+    >
+      <Icon size={12} strokeWidth={2.25} />
+      {label}
+    </Link>
+  );
+}
 
 export function MacHeader({ online }: { online: boolean }) {
   const { theme, setTheme } = useTheme();
@@ -34,6 +72,15 @@ export function MacHeader({ online }: { online: boolean }) {
           aria-hidden
         />
         <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em" }}>Dashboard</span>
+
+        {/* The phone reaches Settings via the tab bar; the Mac has no tab bar,
+            so without this Settings, Habits, Calendars and the evening review
+            are unreachable on desktop entirely. */}
+        <nav className="flex items-center" style={{ gap: 2, marginLeft: 18 }} aria-label="Sections">
+          {MAC_NAV.map(({ href, label, icon: Icon }) => (
+            <MacNavLink key={href} href={href} label={label} icon={Icon} />
+          ))}
+        </nav>
       </div>
 
       <div className="flex items-center" style={{ gap: 18 }}>
