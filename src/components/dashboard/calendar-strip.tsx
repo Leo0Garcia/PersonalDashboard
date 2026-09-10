@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useTodaysEvents } from "@/lib/hooks/use-data";
 import { clearAfter, totalBookedMinutes } from "@/lib/derive";
 import { durationLabel, hhmm } from "@/lib/format";
@@ -39,7 +40,41 @@ export function CalendarStrip() {
   const { data: events } = useTodaysEvents();
   const list = events ?? [];
 
-  if (list.length === 0) return null;
+  // The strip holds its place even with nothing in it: a row that appears and
+  // disappears makes the whole dashboard jump, and "nothing today" is itself
+  // useful information when you are picking three things to focus on.
+  if (list.length === 0) {
+    return (
+      <div
+        className="flex flex-wrap items-baseline justify-between rounded-[10px]"
+        style={{
+          background: "var(--bg-chrome)",
+          border: "1px solid var(--line-softer)",
+          padding: "13px 16px",
+          gap: 10,
+        }}
+      >
+        <div className="flex flex-wrap items-baseline" style={{ gap: 12 }}>
+          <span className="mono-label" style={{ fontSize: 11, color: "var(--ink-3)" }}>
+            Today&rsquo;s Calendar
+          </span>
+          <span
+            className="mono-meta font-medium"
+            style={{ fontSize: 11, color: "var(--ink-3-quiet)" }}
+          >
+            Nothing scheduled today · read only
+          </span>
+        </div>
+        <Link
+          href="/settings"
+          className="mono-meta font-medium"
+          style={{ fontSize: 11, color: "var(--accent)" }}
+        >
+          Manage calendars
+        </Link>
+      </div>
+    );
+  }
 
   const { start, end } = visibleWindow(list);
   const span = end - start;
