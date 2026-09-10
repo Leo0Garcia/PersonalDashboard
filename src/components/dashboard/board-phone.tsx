@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, MoreHorizontal, Star } from "lucide-react";
+import { ArrowLeft, ArrowRight, MoreHorizontal, Star } from "lucide-react";
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@/components/providers";
@@ -16,10 +16,19 @@ const STATUS_CAP: Record<TaskStatus, string> = {
   done: "var(--status-done)",
 };
 
-const NEXT_STATUS: Record<TaskStatus, TaskStatus> = {
+// null at each end rather than wrapping: "Move" on a Done card sending it back
+// to To Do is surprising, and there is a dedicated Back button for going the
+// other way.
+const NEXT_STATUS: Record<TaskStatus, TaskStatus | null> = {
   todo: "in_progress",
   in_progress: "done",
-  done: "todo",
+  done: null,
+};
+
+const PREV_STATUS: Record<TaskStatus, TaskStatus | null> = {
+  todo: null,
+  in_progress: "todo",
+  done: "in_progress",
 };
 
 /**
@@ -177,17 +186,29 @@ export function BoardPhone({
                     borderTop: "1px solid var(--line-soft)",
                   }}
                 >
-                  <ActionButton
-                    flex
-                    disabled={!online}
-                    label={`Move to ${STATUS_LABEL[NEXT_STATUS[task.status]]}`}
-                    onClick={() => void move(task, NEXT_STATUS[task.status])}
-                  >
-                    <span className="mono-meta font-semibold" style={{ fontSize: 11 }}>
-                      Move
-                    </span>
-                    <ArrowRight size={13} strokeWidth={2.5} />
-                  </ActionButton>
+                  {PREV_STATUS[task.status] && (
+                    <ActionButton
+                      disabled={!online}
+                      label={`Move back to ${STATUS_LABEL[PREV_STATUS[task.status]!]}`}
+                      onClick={() => void move(task, PREV_STATUS[task.status]!)}
+                    >
+                      <ArrowLeft size={15} strokeWidth={2.5} />
+                    </ActionButton>
+                  )}
+
+                  {NEXT_STATUS[task.status] && (
+                    <ActionButton
+                      flex
+                      disabled={!online}
+                      label={`Move to ${STATUS_LABEL[NEXT_STATUS[task.status]!]}`}
+                      onClick={() => void move(task, NEXT_STATUS[task.status]!)}
+                    >
+                      <span className="mono-meta font-semibold" style={{ fontSize: 11 }}>
+                        {STATUS_LABEL[NEXT_STATUS[task.status]!]}
+                      </span>
+                      <ArrowRight size={13} strokeWidth={2.5} />
+                    </ActionButton>
+                  )}
 
                   <ActionButton
                     disabled={!online}
@@ -230,7 +251,7 @@ export function BoardPhone({
             padding: "6px 2px 0",
           }}
         >
-          Tap a card to expand actions. Move sends it to the next column; ⋯ picks any column.
+          Tap a card to expand actions. Arrows move it a column either way; ⋯ picks any column.
         </p>
       </div>
 
