@@ -4,6 +4,7 @@ import { useState } from "react";
 import { HabitsEditor } from "@/components/settings/habits-editor";
 import { SettingsScreen } from "@/components/settings/settings-screen";
 import { CalendarSubscriptions } from "@/components/settings/calendar-subscriptions";
+import { AccountPassword } from "@/components/settings/account-password";
 
 export default function SettingsPage() {
   const [view, setView] = useState<"settings" | "habits">("settings");
@@ -17,6 +18,7 @@ export default function SettingsPage() {
           <SettingsScreen onOpenHabits={() => setView("habits")} />
           <div style={{ maxWidth: 560, margin: "0 auto", padding: "0 18px 28px" }}>
             <CalendarSubscriptions />
+            <AccountPassword />
           </div>
         </>
       )}
