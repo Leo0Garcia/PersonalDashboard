@@ -25,6 +25,23 @@ const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY")!;
 const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY")!;
 const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT")!;
 
+/**
+ * A missing secret used to surface as "Cannot read properties of undefined
+ * (reading 'replace')" from deep inside the base64 helper, which says nothing
+ * about the cause. Name the missing variables instead.
+ */
+function missingVapidVars(): string[] {
+  return (
+    [
+      ["VAPID_PUBLIC_KEY", VAPID_PUBLIC_KEY],
+      ["VAPID_PRIVATE_KEY", VAPID_PRIVATE_KEY],
+      ["VAPID_SUBJECT", VAPID_SUBJECT],
+    ] as const
+  )
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+}
+
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
@@ -154,6 +171,19 @@ Deno.serve(async (req: Request) => {
   }
 
   const { user_id, title, body, url, tag } = payload;
+
+  const missing = missingVapidVars();
+  if (missing.length > 0) {
+    const detail =
+      `Missing Edge Function secret(s): ${missing.join(", ")}. ` +
+      `Set them in Supabase under Project Settings -> Edge Functions -> Secrets.`;
+    console.error(`send-push: ${detail}`);
+    return new Response(JSON.stringify({ error: detail }), {
+      status: 500,
+      headers: JSON_HEADERS,
+    });
+  }
+
 
   const { data: subs, error: subsError } = await admin
     .from("push_subscriptions")
