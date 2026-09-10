@@ -40,6 +40,9 @@ export function pushState(standalone: boolean): PushState {
 
   if (isIOS && !standalone) return "needs-install";
   if (!hasApi) return "unsupported";
+  // Without a VAPID public key there is nothing to subscribe against, and
+  // PushManager.subscribe would throw on an undefined applicationServerKey.
+  if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) return "unsupported";
   if (Notification.permission === "denied") return "denied";
   if (Notification.permission === "granted") return "granted";
   return "default";
@@ -57,6 +60,11 @@ export async function enablePush(
     return { ok: false, reason: "Push is not supported on this device." };
   }
 
+  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  if (!vapidPublicKey) {
+    return { ok: false, reason: "NEXT_PUBLIC_VAPID_PUBLIC_KEY is not configured." };
+  }
+
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {
     return { ok: false, reason: "Notification permission was not granted." };
@@ -69,9 +77,7 @@ export async function enablePush(
     existing ??
     (await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(
-        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-      ),
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
     }));
 
   const json = subscription.toJSON();

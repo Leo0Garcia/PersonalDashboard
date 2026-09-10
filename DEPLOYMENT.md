@@ -61,18 +61,53 @@ select * from cron.job_run_details order by start_time desc limit 5;
 
 ## 4. Vercel
 
-Import the repo at vercel.com/new into the `leojgarcia1-4483s-projects` team,
-then add three Environment Variables (all three environments):
+This session could not create the project — the Vercel token it has is allowed
+to create deployments but not projects (403 `forbidden` on `create project`).
+So this part is yours:
 
-| Name | Value |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://elbocxmdfdjhtbrprmen.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_Gs_b0lXEQ1wwONitk54PYw_-l4ljkQ8` |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | the public key from step 1 |
+1. Go to <https://vercel.com/new>, pick the `leojgarcia1-4483s-projects` team,
+   and import `Leo0Garcia/PersonalDashboard`.
+2. Set **Production Branch** to `working/charming-cerf-6768sl` (or merge that
+   branch into `main` first and leave the default).
+3. Deploy. **No environment variables are required** — `.env.production` in the
+   repo carries the Supabase URL and publishable key, both of which are public
+   by design and useless without a signed-in session because of RLS.
+4. Only once you have done step 1 above: add `NEXT_PUBLIC_VAPID_PUBLIC_KEY` as
+   an environment variable so push can be enabled. Until then the settings
+   screen reports push as unsupported rather than erroring.
 
-Then set the Supabase **Site URL** and **Redirect URLs** (Authentication →
-URL Configuration) to the deployed origin, or the magic link will bounce back
-to localhost.
+## 5. Auth redirect URLs — required, or sign-in will not work
+
+Supabase rejects magic-link redirects to origins it does not know, and the
+default is `http://localhost:3000`. In the dashboard: **Authentication → URL
+Configuration**:
+
+- **Site URL**: your Vercel production origin, e.g. `https://personal-dashboard-xxxx.vercel.app`
+- **Redirect URLs**: add `https://<your-origin>/auth/callback` (and
+  `http://localhost:3000/auth/callback` if you want local dev to work too)
+
+Skip this and the sign-in email will arrive but the link will bounce to
+localhost. There is no MCP tool for Supabase auth config, so this cannot be
+automated from a session.
+
+## 6. Calendar sync (Apple Calendar / iCal)
+
+The `calendar-sync-half-hourly` cron job and the `sync-calendars` function are
+already in place. They use the SAME Vault secret as step 3, so once that exists
+both schedulers work.
+
+To connect a calendar, open Settings → Calendars in the app and paste a
+published iCal URL:
+
+- **Apple, on a Mac**: Calendar → right-click the calendar → Share Calendar →
+  tick *Public Calendar* → copy the `webcal://` link.
+- **Apple, on iPhone**: Calendar → Calendars → ⓘ next to a calendar → turn on
+  *Public Calendar* → Share Link.
+- **Google**: Settings → the calendar → *Secret address in iCal format*.
+
+Sync is one-way and read-only — nothing ever writes back to Apple or Google.
+Note that a published Apple calendar URL is readable by anyone who has it, so
+treat it like a password.
 
 ## Installing on your devices
 

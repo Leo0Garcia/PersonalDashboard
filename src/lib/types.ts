@@ -65,6 +65,19 @@ export type CalendarEvent = {
   external_id: string | null;
 };
 
+export type CalendarSubscription = {
+  id: string;
+  user_id: string;
+  name: string;
+  url: string;
+  colour: "default" | "meeting" | "focus" | "personal";
+  enabled: boolean;
+  last_synced_at: string | null;
+  last_error: string | null;
+  last_event_count: number | null;
+  created_at: string;
+};
+
 export type Profile = {
   id: string;
   display_name: string | null;
