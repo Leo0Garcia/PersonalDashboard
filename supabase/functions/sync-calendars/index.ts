@@ -406,11 +406,35 @@ async function syncSubscription(sub: SubscriptionRow, now: Date): Promise<SyncRe
 
 // ---------- entrypoint ----------
 
+
+// Both browser-invoked functions need CORS. supabase-js sends Content-Type and
+// Authorization, which makes the browser fire an OPTIONS preflight first; with
+// no handler for it the call is blocked before it ever reaches this code and
+// surfaces as "Failed to send a request to the Edge Function".
+//
+// Allowing any origin is safe here because verify_jwt is enabled: a caller
+// still needs a valid Supabase JWT, which another site cannot obtain.
+const CORS_HEADERS: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+const JSON_HEADERS: Record<string, string> = {
+  "Content-Type": "application/json",
+  ...CORS_HEADERS,
+};
+
 Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: CORS_HEADERS });
+  }
+
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "method not allowed" }), {
       status: 405,
-      headers: { "Content-Type": "application/json" },
+      headers: JSON_HEADERS,
     });
   }
 
@@ -423,7 +447,7 @@ Deno.serve(async (req: Request) => {
     } catch {
       return new Response(JSON.stringify({ error: "invalid JSON body" }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: JSON_HEADERS,
       });
     }
   }
@@ -437,7 +461,7 @@ Deno.serve(async (req: Request) => {
     console.error("sync-calendars: failed to load subscriptions", subsError);
     return new Response(
       JSON.stringify({ error: "failed to load subscriptions", detail: subsError.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
+      { status: 500, headers: JSON_HEADERS },
     );
   }
 
@@ -472,5 +496,5 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return new Response(JSON.stringify(summary), { headers: { "Content-Type": "application/json" } });
+  return new Response(JSON.stringify(summary), { headers: JSON_HEADERS });
 });
