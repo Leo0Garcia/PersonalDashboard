@@ -363,7 +363,7 @@ async function syncSubscription(sub: SubscriptionRow, now: Date): Promise<SyncRe
   try {
     icsText = await fetchIcs(url);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message = describeError(err);
     console.error(`sync-calendars: fetch failed for subscription ${sub.id}: ${message}`);
     await recordFailure(sub.id, `fetch failed: ${message}`);
     return { ok: false, eventCount: 0, error: message };
@@ -373,7 +373,7 @@ async function syncSubscription(sub: SubscriptionRow, now: Date): Promise<SyncRe
   try {
     comp = parseCalendar(icsText);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message = describeError(err);
     console.error(`sync-calendars: parse failed for subscription ${sub.id}: ${message}`);
     await recordFailure(sub.id, `parse failed: ${message}`);
     return { ok: false, eventCount: 0, error: message };
@@ -385,7 +385,7 @@ async function syncSubscription(sub: SubscriptionRow, now: Date): Promise<SyncRe
   try {
     rows = expandEvents(sub, comp, now);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message = describeError(err);
     console.error(`sync-calendars: expansion failed for subscription ${sub.id}: ${message}`);
     await recordFailure(sub.id, `expansion failed: ${message}`);
     return { ok: false, eventCount: 0, error: message };
@@ -394,7 +394,7 @@ async function syncSubscription(sub: SubscriptionRow, now: Date): Promise<SyncRe
   try {
     await replaceEvents(sub, rows, now);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message = describeError(err);
     console.error(`sync-calendars: database write failed for subscription ${sub.id}: ${message}`);
     await recordFailure(sub.id, `database write failed: ${message}`);
     return { ok: false, eventCount: 0, error: message };
@@ -406,6 +406,27 @@ async function syncSubscription(sub: SubscriptionRow, now: Date): Promise<SyncRe
 
 // ---------- entrypoint ----------
 
+
+/**
+ * Supabase client errors are plain objects, not Error instances, so the usual
+ * `err instanceof Error ? err.message : String(err)` collapses them to the
+ * useless "[object Object]". Pull a message out of whatever shape arrived.
+ */
+function describeError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object") {
+    const e = err as Record<string, unknown>;
+    const parts = [e.message, e.details, e.hint, e.code]
+      .filter((v): v is string => typeof v === "string" && v.length > 0);
+    if (parts.length > 0) return parts.join(" | ");
+    try {
+      return JSON.stringify(err);
+    } catch {
+      return "unserialisable error object";
+    }
+  }
+  return String(err);
+}
 
 // Both browser-invoked functions need CORS. supabase-js sends Content-Type and
 // Authorization, which makes the browser fire an OPTIONS preflight first; with
@@ -490,7 +511,7 @@ Deno.serve(async (req: Request) => {
       }
     } catch (err) {
       summary.failed++;
-      const message = err instanceof Error ? err.message : String(err);
+      const message = describeError(err);
       console.error(`sync-calendars: unexpected failure for subscription ${sub.id}`, err);
       summary.errors.push(`${sub.id}: ${message}`);
     }
